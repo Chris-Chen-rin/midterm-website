@@ -7,7 +7,7 @@ export default function Home() {
       <div
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{
-          backgroundImage: "url('/image/background.jpg?height=1080&width=1920')",
+          backgroundImage: "url('/image/background.svg?height=1080&width=1920')",
           // Replace the above with your actual image path when available
         }}
       >
