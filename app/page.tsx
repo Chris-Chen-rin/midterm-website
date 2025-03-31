@@ -19,14 +19,14 @@ export default function Home() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] py-12 px-4 text-white">
         <h1 className="text-4xl font-bold mb-6">Welcome to My Website</h1>
         <p className="text-xl text-center max-w-2xl mb-8">
-          This is the main page of our multi-page website. Use the navigation at the top to explore other pages.
+          This is a brand new midterm website of 網路攻防實習 Practicum of Attacking and Defense of Network Security
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/about"
             className="px-6 py-3 bg-white/20 backdrop-blur-sm rounded-lg text-center hover:bg-white/30 transition-colors"
           >
-            Learn About Us
+            Learn About Me
           </Link>
           <Link
             href="/users"
