@@ -9,17 +9,13 @@ export default function About() {
           <h1 className="text-3xl font-bold mb-6">About Us</h1>
           <div className="prose max-w-none">
             <p className="mb-4">
-              Welcome to our about page. This is where you can learn more about our company, mission, and values.
+              歡迎來到我的關於頁面，在這裡可以了解更多有關我的資訊。
             </p>
             <p className="mb-4">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl eget ultricies tincidunt,
-              nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl. Nullam auctor, nisl eget ultricies tincidunt,
-              nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl.
+              我的學號是B11901083
             </p>
             <p className="mb-4">
-              Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam
-              rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt
-              explicabo.
+              
             </p>
           </div>
         </div>
@@ -38,20 +34,16 @@ export default function About() {
       {/* Our Mission section with image */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-12">
         <div className="md:w-2/3">
-          <h2 className="text-2xl font-bold mb-4">Our Mission</h2>
+          <h2 className="text-2xl font-bold mb-4">My Mission</h2>
           <div className="prose max-w-none">
             <p className="mb-4">
-              Our mission is to provide the best service to our customers. We strive to be the best in our industry and
-              to provide the best experience for our users.
+              我的目標是在有限的時間內創造出最優良的成果，以在LAB中獲得較高的評分。
             </p>
             <p className="mb-4">
-              Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni
-              dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor
-              sit amet, consectetur, adipisci velit.
+              
             </p>
             <p className="mb-4">
-              At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti
-              atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.
+              
             </p>
           </div>
         </div>
@@ -72,13 +64,10 @@ export default function About() {
         <h2 className="text-2xl font-bold mb-4">Our Team</h2>
         <div className="prose max-w-none">
           <p className="mb-4">
-            Our team consists of experienced professionals who are dedicated to providing the best service to our
-            customers. We have a diverse team with various backgrounds and expertise, allowing us to approach problems
-            from different angles.
+            我的專案是由許多富有創造力的成員一起協作而成，包含ChatGPT、plexity、v0.dev等。
           </p>
           <p className="mb-4">
-            Each member of our team brings unique skills and perspectives, contributing to our collective success. We
-            believe in collaboration, innovation, and continuous improvement.
+            如此頁面，就是由v0.dev產出大綱，再由我進行個人化的修改。
           </p>
         </div>
       </div>
