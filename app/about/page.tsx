@@ -2,7 +2,7 @@ import Image from "next/image"
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-violet-300">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* About Us section with image */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-12">
