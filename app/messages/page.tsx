@@ -7,23 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
-
-interface Profile {
-  email: string
-  avatar_url: string
-}
-
-interface DatabaseMessage {
-  id: string
-  content: string
-  created_at: string
-  user_id: string
-  profiles: {
-    email: string
-    avatar_url: string
-  }
-}
+import { useToast } from "@/components/ui/toast"
 
 interface Message {
   id: string
@@ -41,53 +25,44 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false)
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
-  const { toast } = useToast()
+  const { addToast } = useToast()
 
   useEffect(() => {
     async function getMessages() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-          router.push('/login')
-          return
-        }
-
-        const { data, error } = await supabase
-          .from('messages')
-          .select(`
-            id,
-            content,
-            created_at,
-            user_id,
-            profiles (
-              email,
-              avatar_url
-            )
-          `)
-          .order('created_at', { ascending: false })
-
-        if (error) throw error
-
-        if (data) {
-          const formattedMessages = data.map((message: any) => ({
-            id: message.id,
-            content: message.content,
-            created_at: message.created_at,
-            user_id: message.user_id,
-            user_email: message.profiles.email,
-            user_avatar: message.profiles.avatar_url,
-          }))
-          setMessages(formattedMessages)
-        }
-      } catch (error: any) {
-        toast({
-          title: "錯誤",
-          description: error.message,
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/login')
+        return
       }
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          profiles (
+            email,
+            avatar_url
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        addToast(error.message, "error")
+        return
+      }
+
+      setMessages(data.map(message => ({
+        id: message.id,
+        content: message.content,
+        created_at: message.created_at,
+        user_id: message.user_id,
+        user_email: message.profiles.email,
+        user_avatar: message.profiles.avatar_url,
+      })))
+      setLoading(false)
     }
 
     getMessages()
@@ -128,17 +103,9 @@ export default function MessagesPage() {
       if (error) throw error
 
       setNewMessage("")
-      toast({
-        title: "成功",
-        description: "您的留言已發布",
-        variant: "default",
-      })
+      addToast("您的留言已發布", "success")
     } catch (error: any) {
-      toast({
-        title: "錯誤",
-        description: error.message,
-        variant: "destructive",
-      })
+      addToast(error.message, "error")
     } finally {
       setSending(false)
     }
@@ -157,17 +124,9 @@ export default function MessagesPage() {
 
       if (error) throw error
 
-      toast({
-        title: "成功",
-        description: "留言已刪除",
-        variant: "default",
-      })
+      addToast("留言已刪除", "success")
     } catch (error: any) {
-      toast({
-        title: "錯誤",
-        description: error.message,
-        variant: "destructive",
-      })
+      addToast(error.message, "error")
     }
   }
 

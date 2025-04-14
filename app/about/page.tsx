@@ -32,7 +32,7 @@ export default function About() {
           </div>
         </div>
 
-        {/* Our Mission section with image */}
+        {/* Our Mission section with image    good*/}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-12">
           <div className="md:w-2/3">
             <h2 className="text-2xl font-bold mb-4">Our Mission</h2>

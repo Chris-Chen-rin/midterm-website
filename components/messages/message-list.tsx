@@ -1,25 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getSupabaseBrowserClient } from "@/lib/supabase"
+import { getSupabaseBrowser } from "@/lib/supabase"
 import { MessageItem } from "@/components/messages/message-item"
 import type { User } from "@supabase/supabase-js"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useToast } from "@/hooks/use-toast"
 
 interface MessageListProps {
   currentUser: User | null
-}
-
-type DatabaseMessage = {
-  id: string
-  content: string
-  created_at: string
-  user_id: string
-  profiles: {
-    username: string
-    avatar_url: string | null
-  }[]
 }
 
 interface Message {
@@ -27,15 +15,16 @@ interface Message {
   content: string
   created_at: string
   user_id: string
-  username: string
-  avatar_url: string | null
+  profiles: {
+    username: string
+    avatar_url: string | null
+  }
 }
 
 export function MessageList({ currentUser }: MessageListProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = getSupabaseBrowserClient()
-  const { toast } = useToast()
+  const supabase = getSupabaseBrowser()
 
   const fetchMessages = async () => {
     setLoading(true)
@@ -47,7 +36,7 @@ export function MessageList({ currentUser }: MessageListProps) {
           content,
           created_at,
           user_id,
-          profiles!inner (
+          profiles (
             username,
             avatar_url
           )
@@ -56,28 +45,9 @@ export function MessageList({ currentUser }: MessageListProps) {
 
       if (error) throw error
 
-      if (!data) {
-        setMessages([])
-        return
-      }
-
-      const normalizedData: Message[] = (data as DatabaseMessage[]).map((message) => ({
-        id: message.id,
-        content: message.content,
-        created_at: message.created_at,
-        user_id: message.user_id,
-        username: message.profiles[0]?.username || "Unknown User",
-        avatar_url: message.profiles[0]?.avatar_url || null,
-      }))
-
-      setMessages(normalizedData)
-    } catch (error: any) {
+      setMessages(data || [])
+    } catch (error) {
       console.error("Error fetching messages:", error)
-      toast({
-        title: "錯誤",
-        description: error.message || "載入訊息時發生錯誤",
-        variant: "destructive",
-      })
     } finally {
       setLoading(false)
     }
@@ -127,7 +97,7 @@ export function MessageList({ currentUser }: MessageListProps) {
   if (messages.length === 0) {
     return (
       <div className="text-center p-8 border rounded-lg">
-        <p className="text-muted-foreground">還沒有任何訊息。成為第一個發文的人！</p>
+        <p className="text-muted-foreground">No messages yet. Be the first to post!</p>
       </div>
     )
   }
@@ -141,8 +111,8 @@ export function MessageList({ currentUser }: MessageListProps) {
           content={message.content}
           createdAt={message.created_at}
           userId={message.user_id}
-          username={message.username}
-          avatarUrl={message.avatar_url}
+          username={message.profiles.username}
+          avatarUrl={message.profiles.avatar_url}
           currentUser={currentUser}
           onMessageDeleted={fetchMessages}
         />
