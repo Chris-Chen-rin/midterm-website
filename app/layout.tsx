@@ -37,6 +37,9 @@ export default async function RootLayout({
     }
   }
 
+  console.log("User fetched from Supabase:", user)
+  console.log("Avatar URL fetched:", avatarUrl)
+
   return (
     <html lang="en">
       <body className={inter.className}>
