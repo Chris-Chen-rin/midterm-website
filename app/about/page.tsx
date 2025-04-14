@@ -2,7 +2,7 @@ import Image from "next/image"
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-purple-100">
+    <div className="min-h-screen bg-violet-300">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* About Us section with image */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-12">
@@ -23,7 +23,7 @@ export default function About() {
           <div className="md:w-1/3 flex justify-end">
             <div className="relative w-full h-64 md:h-80">
               <Image
-                src="/selfie.svg?height=280&width=210"
+                src="/images/selfie.svg?height=280&width=210"
                 alt="About Us"
                 fill
                 className="object-cover rounded-lg"
@@ -51,7 +51,7 @@ export default function About() {
           <div className="md:w-1/3 flex justify-end">
             <div className="relative w-full h-64 md:h-80">
               <Image
-                src="/complain.svg?height=240&width=240"
+                src="/images/complain.svg?height=240&width=240"
                 alt="Our Mission"
                 fill
                 className="object-cover rounded-lg"
@@ -76,4 +76,3 @@ export default function About() {
     </div>
   )
 }
-

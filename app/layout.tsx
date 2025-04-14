@@ -3,26 +3,48 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import Navbar from "@/components/navbar"
+import { cookies } from "next/headers"
+import { createServerSupabaseClient } from "@/lib/supabase"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Multi-page Website",
-  description: "A website with multiple pages and navigation",
+  title: "Minterm-MiniProjedt",
+  description: "A website, built by v0.dev, is here with chatboard and login/register function.",
+    generator: 'v0.dev'
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const cookieStore = cookies()
+  const supabase = createServerSupabaseClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let avatarUrl = null
+
+  if (user) {
+    const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).single()
+
+    if (data) {
+      avatarUrl = data.avatar_url
+    }
+  }
+
   return (
-    <html lang="en">
+    <html lang="zh-tw">
       <body className={inter.className}>
-        <Navbar />
+        <Navbar user={user} avatarUrl={avatarUrl} />
         <main className="container mx-auto px-4 py-8">{children}</main>
       </body>
     </html>
   )
 }
 
+
+import './globals.css'

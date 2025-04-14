@@ -7,7 +7,7 @@ export default function Home() {
       <div
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{
-          backgroundImage: "url('/background.svg?height=1080&width=1920')",
+          backgroundImage: "url('/images/background.svg?height=1080&width=1920')",
           // Replace the above with your actual image path when available
         }}
       >
@@ -36,7 +36,7 @@ export default function Home() {
           </Link>
           <Link
             href="/users/create"
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center hover:bg-blue-600 transition-colors"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center hover:bg-primary/90 transition-colors"
           >
             Create a User
           </Link>
@@ -45,4 +45,3 @@ export default function Home() {
     </div>
   )
 }
-
