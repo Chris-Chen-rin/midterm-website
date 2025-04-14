@@ -50,12 +50,12 @@ export default function LoginPage() {
 
       if (error) {
         // 檢查是否是未註冊用戶
-        if (error.message.includes("Invalid login credentials") || 
-            error.message.includes("Email not confirmed")) {
+        if (error.message.includes("Invalid login credentials")) {
           toast({
             title: "登入失敗",
-            description: "此電子郵件尚未註冊。是否要創建新帳號？",
+            description: "此電子郵件尚未註冊或密碼錯誤。需要註冊新帳號嗎？",
             action: <Button onClick={() => setActiveTab("register")}>立即註冊</Button>,
+            duration: 5000,
           })
           return
         }
@@ -65,15 +65,21 @@ export default function LoginPage() {
       toast({
         title: "登入成功",
         description: "歡迎回來！",
+        duration: 3000,
       })
-      router.push(redirectTo)
-      router.refresh()
+      
+      // 延遲重定向以顯示成功訊息
+      setTimeout(() => {
+        router.push(redirectTo)
+        router.refresh()
+      }, 1000)
     } catch (error: any) {
       console.error("登入錯誤:", error.message)
       toast({
         title: "登入錯誤",
         description: error.message,
         variant: "destructive",
+        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -89,57 +95,54 @@ export default function LoginPage() {
         title: "需要使用者名稱",
         description: "請輸入使用者名稱",
         variant: "destructive",
+        duration: 3000,
+      })
+      setLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "密碼太短",
+        description: "密碼必須至少包含 6 個字符",
+        variant: "destructive",
+        duration: 3000,
       })
       setLoading(false)
       return
     }
 
     try {
-      // 先檢查電子郵件是否已註冊
-      const { data: { users }, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-
-      if (users?.length > 0) {
-        toast({
-          title: "註冊錯誤",
-          description: "此電子郵件已經註冊。請直接登入。",
-          action: <Button onClick={() => setActiveTab("login")}>前往登入</Button>,
-        })
-        setLoading(false)
-        return
-      }
-
-      // 註冊新用戶
+      // 直接嘗試註冊
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             username: username,
-          }
+          },
         }
       })
 
-      if (authError) throw authError
+      if (authError) {
+        if (authError.message.includes("User already registered")) {
+          toast({
+            title: "註冊錯誤",
+            description: "此電子郵件已經註冊。請直接登入。",
+            action: <Button onClick={() => setActiveTab("login")}>前往登入</Button>,
+            duration: 5000,
+          })
+          return
+        }
+        throw authError
+      }
 
       if (authData.user) {
-        // 更新用戶資料
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert([{ 
-            id: authData.user.id,
-            username: username,
-            email: email
-          }])
-
-        if (profileError) throw profileError
-
         toast({
           title: "註冊成功",
           description: "您的帳號已經創建成功，請立即登入。",
           action: <Button onClick={() => setActiveTab("login")}>前往登入</Button>,
+          duration: 5000,
         })
         
         // 清空表單
@@ -154,6 +157,7 @@ export default function LoginPage() {
         title: "註冊錯誤",
         description: error.message,
         variant: "destructive",
+        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -234,6 +238,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    minLength={6}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
