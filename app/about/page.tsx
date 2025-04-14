@@ -23,7 +23,7 @@ export default function About() {
           <div className="md:w-1/3 flex justify-end">
             <div className="relative w-full h-64 md:h-80">
               <Image
-                src="/images/selfie.svg?height=280&width=210"
+                src="/selfie.svg?height=280&width=210"
                 alt="About Us"
                 fill
                 className="object-cover rounded-lg"
@@ -51,7 +51,7 @@ export default function About() {
           <div className="md:w-1/3 flex justify-end">
             <div className="relative w-full h-64 md:h-80">
               <Image
-                src="/images/complain.svg?height=240&width=240"
+                src="/complain.svg?height=240&width=240"
                 alt="Our Mission"
                 fill
                 className="object-cover rounded-lg"

@@ -9,8 +9,8 @@ import { createServerSupabaseClient } from "@/lib/supabase"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Minterm-MiniProjedt",
-  description: "A website, built by v0.dev, is here with chatboard and login/register function.",
+  title: "Multi-page Website",
+  description: "A website with multiple pages and navigation",
     generator: 'v0.dev'
 }
 
@@ -37,7 +37,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="zh-tw">
+    <html lang="en">
       <body className={inter.className}>
         <Navbar user={user} avatarUrl={avatarUrl} />
         <main className="container mx-auto px-4 py-8">{children}</main>

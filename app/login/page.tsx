@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
@@ -11,26 +12,30 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [username, setUsername] = useState("")
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("login")
-  const [showRegisterPrompt, setShowRegisterPrompt] = useState(false)
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") || "/"
   const supabase = getSupabaseBrowserClient()
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        router.push(redirectTo)
+      }
+    }
+
+    checkUser()
+  }, [router, redirectTo, supabase.auth])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,31 +47,16 @@ export default function LoginPage() {
         password,
       })
 
-      if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          setShowRegisterPrompt(true)
-          return
-        }
-        throw error
-      }
+      if (error) throw error
 
-      toast({
-        title: "登入成功",
-        description: "歡迎回來！",
-        duration: 3000,
-      })
-      
-      setTimeout(() => {
-        router.push(redirectTo)
-        router.refresh()
-      }, 1000)
+      router.push(redirectTo)
+      router.refresh()
     } catch (error: any) {
-      console.error("登入錯誤:", error)
+      console.error("Error signing in:", error.message)
       toast({
-        title: "登入錯誤",
-        description: "電子郵件或密碼錯誤",
+        title: "Error signing in",
+        description: error.message,
         variant: "destructive",
-        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -77,49 +67,46 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
-    if (password.length < 6) {
+    if (!username.trim()) {
       toast({
-        title: "密碼太短",
-        description: "密碼必須至少包含 6 個字符",
+        title: "Username required",
+        description: "Please enter a username",
         variant: "destructive",
-        duration: 3000,
       })
       setLoading(false)
       return
     }
 
     try {
+      // First register the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       })
 
-      if (authError) {
-        if (authError.message.includes("User already registered")) {
-          setShowLoginPrompt(true)
-          return
-        }
-        throw authError
-      }
+      if (authError) throw authError
 
       if (authData.user) {
+        // Then update their profile with the username
+        const { error: profileError } = await supabase.from("profiles").update({ username }).eq("id", authData.user.id)
+
+        if (profileError) throw profileError
+
         toast({
-          title: "註冊成功",
-          description: "您的帳號已經創建成功！",
-          duration: 5000,
+          title: "Registration successful",
+          description: "Your account has been created successfully.",
         })
-        
-        setPassword("")
-        setEmail("")
-        setActiveTab("login")
+
+        // Redirect to the intended page
+        router.push(redirectTo)
+        router.refresh()
       }
     } catch (error: any) {
-      console.error("註冊錯誤:", error)
+      console.error("Error signing up:", error.message)
       toast({
-        title: "註冊錯誤",
-        description: error.message || "註冊過程中發生錯誤",
+        title: "Error signing up",
+        description: error.message,
         variant: "destructive",
-        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -129,69 +116,12 @@ export default function LoginPage() {
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
       <Toaster />
-      
-      {/* 未註冊用戶提示對話框 */}
-      <Dialog open={showRegisterPrompt} onOpenChange={setShowRegisterPrompt}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>尚未註冊？</DialogTitle>
-            <DialogDescription>
-              此電子郵件尚未註冊。您想要創建新帳號嗎？
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => setShowRegisterPrompt(false)}
-            >
-              取消
-            </Button>
-            <Button
-              onClick={() => {
-                setActiveTab("register")
-                setShowRegisterPrompt(false)
-              }}
-            >
-              立即註冊
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 已註冊用戶提示對話框 */}
-      <Dialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>已經註冊？</DialogTitle>
-            <DialogDescription>
-              此電子郵件已經註冊。請直接登入。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => setShowLoginPrompt(false)}
-            >
-              取消
-            </Button>
-            <Button
-              onClick={() => {
-                setActiveTab("login")
-                setShowLoginPrompt(false)
-              }}
-            >
-              前往登入
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <Card className="w-full max-w-md">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="login">
           <CardHeader>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">登入</TabsTrigger>
-              <TabsTrigger value="register">註冊</TabsTrigger>
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
           </CardHeader>
 
@@ -199,7 +129,7 @@ export default function LoginPage() {
             <TabsContent value="login">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">電子郵件</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -210,7 +140,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">密碼</Label>
+                  <Label htmlFor="password">Password</Label>
                   <Input
                     id="password"
                     type="password"
@@ -220,7 +150,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "登入中..." : "登入"}
+                  {loading ? "Logging in..." : "Login"}
                 </Button>
               </form>
             </TabsContent>
@@ -228,7 +158,7 @@ export default function LoginPage() {
             <TabsContent value="register">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-email">電子郵件</Label>
+                  <Label htmlFor="register-email">Email</Label>
                   <Input
                     id="register-email"
                     type="email"
@@ -239,18 +169,28 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="register-password">密碼</Label>
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="johndoe"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-password">Password</Label>
                   <Input
                     id="register-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "註冊中..." : "註冊"}
+                  {loading ? "Registering..." : "Register"}
                 </Button>
               </form>
             </TabsContent>
