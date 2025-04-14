@@ -1,65 +1,65 @@
 import Link from "next/link"
+import { getSupabaseBrowserClient } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import type { User } from "@supabase/supabase-js"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-interface NavbarProps {
-  user: User | null
-  avatarUrl: string | null
-}
+export default function Navbar({ user, avatarUrl }: { user: any; avatarUrl: string | null }) {
+  const router = useRouter()
+  const supabase = getSupabaseBrowserClient()
 
-export default function Navbar({ user, avatarUrl }: NavbarProps) {
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.refresh()
+  }
+
   return (
-    <nav className="bg-black text-white shadow-md sticky top-0 z-10">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href="/" className="text-xl font-bold text-white">
-              My Website
-            </Link>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
-              Home
-            </Link>
-            <Link href="/about" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
-              About
-            </Link>
-            <Link href="/users" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
-              View Users
-            </Link>
-
-            {user ? (
-              <>
-                <Link
-                  href="/messages"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800"
-                >
-                  Messages
-                </Link>
-                <div className="flex items-center gap-2">
-                  <Link href="/profile">
-                    <Avatar className="h-8 w-8 cursor-pointer">
-                      <AvatarImage src={avatarUrl || undefined} alt={user.email || "User"} />
-                      <AvatarFallback>{user.email?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
-                    </Avatar>
-                  </Link>
-                  <form action="/api/auth/signout" method="post">
-                    <Button type="submit" variant="ghost" className="text-white hover:bg-gray-800" size="sm">
-                      Logout
-                    </Button>
-                  </form>
-                </div>
-              </>
-            ) : (
+    <nav className="border-b">
+      <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+        <Link href="/" className="text-xl font-bold">
+          首頁
+        </Link>
+        <div className="flex items-center gap-4">
+          {user ? (
+            <>
               <Link
-                href="/login"
-                className="px-3 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90"
+                href="/messages"
+                className="text-sm hover:text-primary transition-colors"
               >
-                Login / Register
+                訊息
               </Link>
-            )}
-          </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="focus:outline-none">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={avatarUrl || ""} />
+                    <AvatarFallback>
+                      {user.email ? user.email[0].toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">個人資料</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    登出
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="text-sm hover:text-primary transition-colors"
+            >
+              登入
+            </Link>
+          )}
         </div>
       </div>
     </nav>
