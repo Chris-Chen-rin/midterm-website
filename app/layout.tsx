@@ -9,7 +9,7 @@ import { createServerSupabaseClient } from "@/lib/supabase"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Multi-page Website",
+  title: "Midterm miniproject",
   description: "A website with multiple pages and navigation",
     generator: 'v0.dev'
 }

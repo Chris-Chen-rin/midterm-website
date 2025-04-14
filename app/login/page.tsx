@@ -40,7 +40,6 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
     setLoading(true)
 
     try {
@@ -52,13 +51,36 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        router.push("/profile") // 登入成功後導向個人資料頁面
+        toast({
+          title: "登入成功",
+          description: "歡迎回來！",
+          variant: "default",
+        })
+        router.push("/profile")
       } else {
-        setError("登入失敗，請檢查您的用戶名和密碼")
+        if (response.status === 404) {
+          toast({
+            title: "登入失敗",
+            description: "此帳號不存在",
+            variant: "destructive",
+          })
+        } else {
+          toast({
+            title: "登入失敗",
+            description: "請檢查您的用戶名和密碼",
+            variant: "destructive",
+          })
+        }
       }
     } catch (err) {
-      setError("發生錯誤，請稍後再試")
+      toast({
+        title: "系統錯誤",
+        description: "發生錯誤，請稍後再試",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -96,8 +118,8 @@ export default function LoginPage() {
 
     if (!username.trim()) {
       toast({
-        title: "Username required",
-        description: "Please enter a username",
+        title: "註冊失敗",
+        description: "請輸入用戶名",
         variant: "destructive",
       })
       setLoading(false)
@@ -105,34 +127,42 @@ export default function LoginPage() {
     }
 
     try {
-      // First register the user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password, email }),
       })
 
-      if (authError) throw authError
+      const data = await response.json()
 
-      if (authData.user) {
-        // Then update their profile with the username
-        const { error: profileError } = await supabase.from("profiles").update({ username }).eq("id", authData.user.id)
-
-        if (profileError) throw profileError
-
+      if (response.ok) {
         toast({
-          title: "Registration successful",
-          description: "Your account has been created successfully.",
+          title: "註冊成功",
+          description: "您的帳號已成功創建",
+          variant: "default",
         })
-
-        // Redirect to the intended page
-        router.push(redirectTo)
-        router.refresh()
+        router.push("/login")
+      } else {
+        if (response.status === 409) {
+          toast({
+            title: "註冊失敗",
+            description: "此用戶名已被使用",
+            variant: "destructive",
+          })
+        } else {
+          toast({
+            title: "註冊失敗",
+            description: data.message || "註冊過程中發生錯誤",
+            variant: "destructive",
+          })
+        }
       }
-    } catch (error: any) {
-      console.error("Error signing up:", error.message)
+    } catch (error) {
       toast({
-        title: "Error signing up",
-        description: error.message,
+        title: "系統錯誤",
+        description: "發生錯誤，請稍後再試",
         variant: "destructive",
       })
     } finally {
@@ -147,8 +177,8 @@ export default function LoginPage() {
         <Tabs defaultValue="login">
           <CardHeader>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+              <TabsTrigger value="login">登入</TabsTrigger>
+              <TabsTrigger value="register">註冊</TabsTrigger>
             </TabsList>
           </CardHeader>
 
@@ -156,31 +186,29 @@ export default function LoginPage() {
             <TabsContent value="login">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username">用戶名</Label>
                   <Input
                     id="username"
                     type="text"
-                    placeholder="johndoe"
+                    placeholder="請輸入用戶名"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">密碼</Label>
                   <Input
                     id="password"
                     type="password"
+                    placeholder="請輸入密碼"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>
-                {error && (
-                  <div className="text-red-500 text-sm text-center">{error}</div>
-                )}
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? "登入中..." : "登入"}
                 </Button>
               </form>
             </TabsContent>
@@ -188,39 +216,40 @@ export default function LoginPage() {
             <TabsContent value="register">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-email">Email</Label>
+                  <Label htmlFor="register-email">電子郵件</Label>
                   <Input
                     id="register-email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder="請輸入電子郵件"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="register-username">用戶名</Label>
                   <Input
-                    id="username"
+                    id="register-username"
                     type="text"
-                    placeholder="johndoe"
+                    placeholder="請輸入用戶名"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="register-password">Password</Label>
+                  <Label htmlFor="register-password">密碼</Label>
                   <Input
                     id="register-password"
                     type="password"
+                    placeholder="請輸入密碼"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Registering..." : "Register"}
+                  {loading ? "註冊中..." : "註冊"}
                 </Button>
               </form>
             </TabsContent>

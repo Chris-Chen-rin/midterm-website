@@ -12,17 +12,23 @@ export async function POST(request: Request) {
     const { username, password } = body;
 
     // 在實際應用中，這裡應該要連接資料庫進行驗證
-    if (username === MOCK_USER.username && password === MOCK_USER.password) {
-      // 在實際應用中，這裡應該生成 JWT 或其他身份驗證令牌
-      return NextResponse.json(
-        { success: true, message: '登入成功' },
-        { status: 200 }
-      );
+    if (username === MOCK_USER.username) {
+      if (password === MOCK_USER.password) {
+        return NextResponse.json(
+          { success: true, message: '登入成功' },
+          { status: 200 }
+        );
+      } else {
+        return NextResponse.json(
+          { success: false, message: '密碼錯誤' },
+          { status: 401 }
+        );
+      }
     }
 
     return NextResponse.json(
-      { success: false, message: '用戶名或密碼錯誤' },
-      { status: 401 }
+      { success: false, message: '用戶不存在' },
+      { status: 404 }
     );
   } catch (error) {
     return NextResponse.json(
