@@ -5,12 +5,13 @@ import Navbar from "@/components/navbar"
 import { cookies } from "next/headers"
 import { createServerSupabaseClient } from "@/lib/supabase"
 import { Providers } from "./providers"
-import { Suspense, ErrorBoundary } from "react"
-import type { ReactNode } from "react"
 
 const inter = Inter({ 
   subsets: ["latin"],
-  display: 'swap'
+  display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'arial'],
+  adjustFontFallback: true
 })
 
 export const metadata: Metadata = {
@@ -26,23 +27,10 @@ export const metadata: Metadata = {
   }
 }
 
-function LoadingFallback() {
-  return <div className="flex items-center justify-center min-h-screen">載入中...</div>
-}
-
-function ErrorFallback({ error }: { error: Error }) {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h2 className="text-red-600">發生錯誤</h2>
-      <p>{error.message}</p>
-    </div>
-  )
-}
-
 export default async function RootLayout({
   children,
 }: {
-  children: ReactNode
+  children: React.ReactNode
 }) {
   try {
     const cookieStore = cookies()
@@ -76,17 +64,22 @@ export default async function RootLayout({
 
     return (
       <html lang="zh-tw">
+        <head>
+          <link
+            rel="preload"
+            href={inter.style.fontFamily}
+            as="font"
+            type="font/woff2"
+            crossOrigin="anonymous"
+          />
+        </head>
         <body className={inter.className}>
-          <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <Providers>
-              <Suspense fallback={<LoadingFallback />}>
-                <Navbar user={user} avatarUrl={avatarUrl} />
-                <main className="container mx-auto px-4 py-8">
-                  {children}
-                </main>
-              </Suspense>
-            </Providers>
-          </ErrorBoundary>
+          <Providers>
+            <Navbar user={user} avatarUrl={avatarUrl} />
+            <main className="container mx-auto px-4 py-8">
+              {children}
+            </main>
+          </Providers>
         </body>
       </html>
     )
@@ -95,7 +88,10 @@ export default async function RootLayout({
     return (
       <html lang="zh-tw">
         <body className={inter.className}>
-          <ErrorFallback error={error as Error} />
+          <div className="flex flex-col items-center justify-center min-h-screen">
+            <h2 className="text-red-600">系統錯誤</h2>
+            <p>請稍後再試</p>
+          </div>
         </body>
       </html>
     )
