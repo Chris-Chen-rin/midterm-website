@@ -6,7 +6,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useToast } from "@/components/ui/toast"
+import { useToast } from "@/hooks/use-toast"
 
 export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -14,7 +14,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
-  const { addToast } = useToast()
+  const { toast } = useToast()
 
   useEffect(() => {
     async function getUser() {
@@ -86,9 +86,17 @@ export default function ProfilePage() {
       }
 
       setAvatarUrl(publicUrl)
-      addToast("您的頭像已更新", "success")
+      toast({
+        title: "成功",
+        description: "您的頭像已更新",
+        variant: "default",
+      })
     } catch (error: any) {
-      addToast(error.message || "上傳頭像時發生錯誤", "error")
+      toast({
+        title: "錯誤",
+        description: error.message || "上傳頭像時發生錯誤",
+        variant: "destructive",
+      })
     } finally {
       setUploading(false)
     }

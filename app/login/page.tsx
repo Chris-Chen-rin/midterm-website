@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/toast"
+import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") || "/"
   const supabase = getSupabaseBrowserClient()
-  const { addToast } = useToast()
+  const { toast } = useToast()
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,7 +50,11 @@ export default function LoginPage() {
         throw error
       }
 
-      addToast("登入成功，歡迎回來！", "success")
+      toast({
+        title: "登入成功",
+        description: "登入成功，歡迎回來！",
+        variant: "default",
+      })
       
       setTimeout(() => {
         router.push(redirectTo)
@@ -58,7 +62,11 @@ export default function LoginPage() {
       }, 1000)
     } catch (error: any) {
       console.error("登入錯誤:", error)
-      addToast("電子郵件或密碼錯誤", "error")
+      toast({
+        title: "錯誤",
+        description: "電子郵件或密碼錯誤",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -69,7 +77,11 @@ export default function LoginPage() {
     setLoading(true)
 
     if (password.length < 6) {
-      addToast("密碼必須至少包含 6 個字符", "error")
+      toast({
+        title: "錯誤",
+        description: "密碼必須至少包含 6 個字符",
+        variant: "destructive",
+      })
       setLoading(false)
       return
     }
@@ -89,7 +101,11 @@ export default function LoginPage() {
       }
 
       if (authData.user) {
-        addToast("註冊成功，您的帳號已經創建成功！", "success")
+        toast({
+          title: "註冊成功",
+          description: "註冊成功，您的帳號已經創建成功！",
+          variant: "default",
+        })
         
         setPassword("")
         setEmail("")
@@ -97,7 +113,11 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       console.error("註冊錯誤:", error)
-      addToast(error.message || "註冊過程中發生錯誤", "error")
+      toast({
+        title: "錯誤",
+        description: error.message || "註冊過程中發生錯誤",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }

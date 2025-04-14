@@ -5,6 +5,7 @@ import Navbar from "@/components/navbar"
 import { cookies } from "next/headers"
 import { createServerSupabaseClient } from "@/lib/supabase"
 import { Providers } from "./providers"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -80,6 +81,7 @@ export default async function RootLayout({
               {children}
             </main>
           </Providers>
+          <Toaster />
         </body>
       </html>
     )
