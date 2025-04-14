@@ -1,218 +1,148 @@
 "use client"
 
-import type React from "react"
-
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import type { User } from "@supabase/supabase-js"
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [username, setUsername] = useState("")
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [updating, setUpdating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
+    async function getUser() {
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        router.push("/login?redirect=/profile")
+        router.push('/login')
         return
       }
-
       setUser(user)
 
-      // Fetch profile data
-      const { data, error } = await supabase.from("profiles").select("username, avatar_url").eq("id", user.id).single()
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', user.id)
+        .single()
 
-      if (error) {
-        console.error("Error fetching profile:", error)
-        toast({
-          title: "Error fetching profile",
-          description: error.message,
-          variant: "destructive",
-        })
-      } else if (data) {
-        setUsername(data.username)
+      if (data) {
         setAvatarUrl(data.avatar_url)
       }
-
-      setLoading(false)
     }
 
-    fetchUser()
+    getUser()
   }, [router, supabase])
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      const file = files[0]
-
-      // Check file type
-      if (!file.type.match(/image\/(jpeg|png)/)) {
-        toast({
-          title: "Invalid file type",
-          description: "Only JPG and PNG images are allowed",
-          variant: "destructive",
-        })
-        return
-      }
-
-      // Check file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Maximum file size is 2MB",
-          variant: "destructive",
-        })
-        return
-      }
-
-      setAvatarFile(file)
-
-      // Create a preview
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setAvatarUrl(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const updateProfile = async () => {
-    if (!user) return
-
-    setUpdating(true)
-    setError(null)
-
+  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      let newAvatarUrl = avatarUrl
+      setUploading(true)
 
-      // Upload avatar if a new one was selected
-      if (avatarFile) {
-        const fileExt = avatarFile.name.split(".").pop()
-        const filePath = `avatars/${user.id}.${fileExt}`
-
-        const { error: uploadError, data } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, avatarFile, { upsert: true })
-
-        if (uploadError) throw uploadError
-
-        // Get the public URL
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("avatars").getPublicUrl(filePath)
-
-        newAvatarUrl = publicUrl
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error('請選擇一個圖片檔案')
       }
 
-      // Update profile
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          username,
-          avatar_url: newAvatarUrl,
+      const file = event.target.files[0]
+      const fileExt = file.name.split('.').pop()
+      
+      // 檢查檔案類型
+      if (!['jpg', 'jpeg', 'png'].includes(fileExt?.toLowerCase() || '')) {
+        throw new Error('只允許上傳 JPG 或 PNG 格式的圖片')
+      }
+
+      // 檢查檔案大小（最大 5MB）
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('圖片大小不能超過 5MB')
+      }
+
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file)
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName)
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          avatar_url: publicUrl,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id)
 
-      if (error) throw error
+      if (updateError) {
+        throw updateError
+      }
 
+      setAvatarUrl(publicUrl)
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
+        title: "上傳成功",
+        description: "您的頭像已更新",
+        duration: 3000,
       })
-
-      // Refresh the page to show updated data
-      router.refresh()
     } catch (error: any) {
-      setError(error.message || "Failed to update profile")
       toast({
-        title: "Error updating profile",
-        description: error.message,
+        title: "上傳失敗",
+        description: error.message || "上傳頭像時發生錯誤",
         variant: "destructive",
+        duration: 5000,
       })
     } finally {
-      setUpdating(false)
+      setUploading(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="container max-w-md py-12">
-        <p className="text-center">Loading profile...</p>
-      </div>
-    )
-  }
+  if (!user) return null
 
   return (
-    <div className="container max-w-md py-12">
+    <div className="container mx-auto px-4 py-8">
       <Toaster />
-      <h1 className="text-3xl font-bold text-center mb-6">Your Profile</h1>
-
-      <Card>
+      <Card className="max-w-md mx-auto">
         <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-          <CardDescription>Update your profile information and avatar</CardDescription>
+          <CardTitle>個人資料</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex flex-col items-center gap-4">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={avatarUrl || undefined} alt={username} />
-              <AvatarFallback>{username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+          <div className="flex flex-col items-center space-y-4">
+            <Avatar className="h-32 w-32">
+              <AvatarImage src={avatarUrl || undefined} alt={user.email} />
+              <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
-
-            <div className="w-full">
-              <Label htmlFor="avatar" className="block mb-2">
-                Profile Picture (JPG or PNG only)
-              </Label>
-              <Input id="avatar" type="file" accept="image/jpeg, image/png" onChange={handleAvatarChange} />
-              <p className="text-xs text-muted-foreground mt-1">Maximum file size: 2MB</p>
+            <div className="flex flex-col items-center space-y-2">
+              <Button
+                variant="outline"
+                className="relative"
+                disabled={uploading}
+              >
+                {uploading ? "上傳中..." : "更換頭像"}
+                <input
+                  type="file"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  accept="image/jpeg,image/png"
+                  onChange={uploadAvatar}
+                  disabled={uploading}
+                />
+              </Button>
+              <p className="text-sm text-gray-500">
+                支援的格式：JPG、PNG（最大 5MB）
+              </p>
             </div>
           </div>
-
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" value={user?.email || ""} disabled />
-            <p className="text-xs text-muted-foreground">Your email cannot be changed</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <h3 className="font-medium">電子郵件</h3>
+            <p className="text-gray-600">{user.email}</p>
           </div>
         </CardContent>
-        <CardFooter>
-          <Button onClick={updateProfile} disabled={updating || !username.trim()} className="w-full">
-            {updating ? "Updating..." : "Update Profile"}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   )

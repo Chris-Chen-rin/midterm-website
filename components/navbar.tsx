@@ -2,6 +2,8 @@ import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import type { User } from "@supabase/supabase-js"
+import { toast } from "@/components/ui/use-toast"
+import { Toaster } from "@/components/ui/toaster"
 
 interface NavbarProps {
   user: User | null
@@ -9,47 +11,88 @@ interface NavbarProps {
 }
 
 export default function Navbar({ user, avatarUrl }: NavbarProps) {
+  const handleSignOut = async () => {
+    try {
+      const response = await fetch('/api/auth/signout', {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error('登出失敗');
+      }
+
+      toast({
+        title: "登出成功",
+        description: "期待您的再次造訪！",
+        duration: 3000,
+      });
+
+      // 等待 toast 顯示後再重新整理頁面
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('登出錯誤:', error);
+      toast({
+        title: "登出錯誤",
+        description: "請稍後再試",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   return (
     <nav className="bg-black text-white shadow-md sticky top-0 z-10">
+      <Toaster />
       <div className="container mx-auto px-4">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="text-xl font-bold text-white">
               My Website
             </Link>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
-              Home
-            </Link>
-            <Link href="/about" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
-              About
-            </Link>
-            <Link href="/users" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
-              View Users
-            </Link>
-
-            {user ? (
-              <>
+            <div className="ml-10 flex items-center space-x-4">
+              <Link href="/" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
+                Home
+              </Link>
+              <Link href="/about" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
+                About
+              </Link>
+              <Link href="/users" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
+                View Users
+              </Link>
+              {user && (
                 <Link
                   href="/messages"
                   className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800"
                 >
                   Messages
                 </Link>
-                <div className="flex items-center gap-2">
-                  <Link href="/profile">
-                    <Avatar className="h-8 w-8 cursor-pointer">
-                      <AvatarImage src={avatarUrl || undefined} alt={user.email || "User"} />
-                      <AvatarFallback>{user.email?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
-                    </Avatar>
-                  </Link>
-                  <form action="/api/auth/signout" method="post">
-                    <Button type="submit" variant="ghost" className="text-white hover:bg-gray-800" size="sm">
-                      Logout
-                    </Button>
-                  </form>
-                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800"
+                >
+                  <span>My Account</span>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={avatarUrl || undefined} alt={user.email || "User"} />
+                    <AvatarFallback>{user.email?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                  </Avatar>
+                </Link>
+                <Button
+                  onClick={handleSignOut}
+                  variant="ghost"
+                  className="text-white hover:bg-gray-800"
+                  size="sm"
+                >
+                  登出
+                </Button>
               </>
             ) : (
               <Link
