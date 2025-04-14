@@ -89,6 +89,7 @@ export default function LoginPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    console.log('開始註冊流程')
 
     if (!username.trim()) {
       toast({
@@ -113,6 +114,8 @@ export default function LoginPage() {
     }
 
     try {
+      console.log('嘗試註冊用戶:', { email, username })
+      
       // 直接嘗試註冊
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -123,6 +126,8 @@ export default function LoginPage() {
           },
         }
       })
+
+      console.log('註冊結果:', { authData, error: authError?.message })
 
       if (authError) {
         if (authError.message.includes("User already registered")) {
@@ -138,6 +143,27 @@ export default function LoginPage() {
       }
 
       if (authData.user) {
+        console.log('用戶創建成功，正在創建 profile')
+        
+        // 手動創建 profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: authData.user.id,
+              username: username,
+              email: email,
+              updated_at: new Date().toISOString()
+            }
+          ])
+
+        console.log('Profile 創建結果:', { error: profileError?.message })
+
+        if (profileError) {
+          console.error('Profile 創建失敗:', profileError)
+          throw profileError
+        }
+
         toast({
           title: "註冊成功",
           description: "您的帳號已經創建成功，請立即登入。",
@@ -152,10 +178,10 @@ export default function LoginPage() {
         setActiveTab("login")
       }
     } catch (error: any) {
-      console.error("註冊錯誤:", error.message)
+      console.error("註冊錯誤:", error)
       toast({
         title: "註冊錯誤",
-        description: error.message,
+        description: error.message || "註冊過程中發生錯誤",
         variant: "destructive",
         duration: 5000,
       })
