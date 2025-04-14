@@ -4,12 +4,7 @@ import Link from "next/link"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 import type { User } from "@supabase/supabase-js"
 
 interface NavbarProps {
@@ -27,47 +22,54 @@ export default function Navbar({ user, avatarUrl }: NavbarProps) {
   }
 
   return (
-    <nav className="border-b">
-      <div className="container mx-auto px-4 py-2 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold">
-          首頁
-        </Link>
-        <div className="flex items-center gap-4">
-          {user ? (
-            <>
-              <Link
-                href="/messages"
-                className="text-sm hover:text-primary transition-colors"
-              >
-                訊息
-              </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger className="focus:outline-none">
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={avatarUrl || ""} />
-                    <AvatarFallback>
-                      {user.email ? user.email[0].toUpperCase() : "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile">個人資料</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    登出
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className="text-sm hover:text-primary transition-colors"
-            >
-              登入
+    <nav className="bg-black text-white shadow-md sticky top-0 z-10">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link href="/" className="text-xl font-bold text-white">
+              My Website
             </Link>
-          )}
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link href="/" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
+              首頁
+            </Link>
+            <Link href="/about" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800">
+              關於
+            </Link>
+
+            {user ? (
+              <>
+                <Link
+                  href="/messages"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800"
+                >
+                  訊息
+                </Link>
+                <Link
+                  href="/profile"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-800"
+                >
+                  個人資料
+                </Link>
+                <Button
+                  onClick={handleSignOut}
+                  variant="ghost"
+                  className="text-white hover:bg-gray-800"
+                  size="sm"
+                >
+                  登出
+                </Button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="px-3 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                登入
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </nav>
