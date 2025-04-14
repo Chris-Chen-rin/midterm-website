@@ -2,8 +2,7 @@ import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import type { User } from "@supabase/supabase-js"
-import { toast } from "@/components/ui/use-toast"
-import { Toaster } from "@/components/ui/toaster"
+import { useToast } from "@/components/ui/toast"
 
 interface NavbarProps {
   user: User | null
@@ -11,6 +10,8 @@ interface NavbarProps {
 }
 
 export default function Navbar({ user, avatarUrl }: NavbarProps) {
+  const { addToast } = useToast();
+
   const handleSignOut = async () => {
     try {
       const response = await fetch('/api/auth/signout', {
@@ -21,11 +22,7 @@ export default function Navbar({ user, avatarUrl }: NavbarProps) {
         throw new Error('登出失敗');
       }
 
-      toast({
-        title: "登出成功",
-        description: "期待您的再次造訪！",
-        duration: 3000,
-      });
+      addToast("登出成功，期待您的再次造訪！", "success");
 
       // 等待 toast 顯示後再重新整理頁面
       setTimeout(() => {
@@ -33,18 +30,12 @@ export default function Navbar({ user, avatarUrl }: NavbarProps) {
       }, 1000);
     } catch (error) {
       console.error('登出錯誤:', error);
-      toast({
-        title: "登出錯誤",
-        description: "請稍後再試",
-        variant: "destructive",
-        duration: 3000,
-      });
+      addToast("登出錯誤，請稍後再試", "error");
     }
   };
 
   return (
     <nav className="bg-black text-white shadow-md sticky top-0 z-10">
-      <Toaster />
       <div className="container mx-auto px-4">
         <div className="flex justify-between h-16">
           <div className="flex items-center">

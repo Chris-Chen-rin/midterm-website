@@ -5,6 +5,7 @@ import "./globals.css"
 import Navbar from "@/components/navbar"
 import { cookies } from "next/headers"
 import { createServerSupabaseClient } from "@/lib/supabase"
+import { ToastProvider } from "@/components/ui/toast"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -39,8 +40,10 @@ export default async function RootLayout({
   return (
     <html lang="zh-tw">
       <body className={inter.className}>
-        <Navbar user={user} avatarUrl={avatarUrl} />
-        <main className="container mx-auto px-4 py-8">{children}</main>
+        <ToastProvider>
+          <Navbar user={user} avatarUrl={avatarUrl} />
+          <main className="container mx-auto px-4 py-8">{children}</main>
+        </ToastProvider>
       </body>
     </html>
   )

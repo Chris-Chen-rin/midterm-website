@@ -1,36 +1,68 @@
 "use client"
 
-import React from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
-interface ToastProps {
+interface Toast {
+  id: number;
   message: string;
-  type?: 'success' | 'error';
-  onClose?: () => void;
+  type: 'success' | 'error';
 }
 
-export function Toast({ message, type = 'success', onClose }: ToastProps) {
-  const [isVisible, setIsVisible] = React.useState(true);
+interface ToastContextType {
+  addToast: (message: string, type: 'success' | 'error') => void;
+}
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      onClose?.();
-    }, 3000);
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  if (!isVisible) return null;
-
-  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-
-  return (
-    <div className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg z-50`}>
-      {message}
-    </div>
-  );
+export function useToast() {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context;
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const addToast = useCallback((message: string, type: 'success' | 'error') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 3000);
+  }, []);
+
+  return (
+    <ToastContext.Provider value={{ addToast }}>
+      {children}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`px-6 py-3 rounded-md shadow-lg ${
+              toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } text-white`}
+          >
+            {toast.message}
+          </div>
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+export function toast(options: { title: string; description?: string; variant?: 'default' | 'destructive'; duration?: number }) {
+  const type = options.variant === 'destructive' ? 'error' : 'success';
+  const message = options.description || options.title;
+  
+  // 獲取 context
+  try {
+    const context = useContext(ToastContext);
+    if (context) {
+      context.addToast(message, type);
+    }
+  } catch (error) {
+    console.error('Toast error:', error);
+  }
 }

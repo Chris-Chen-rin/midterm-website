@@ -9,8 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "@/components/ui/use-toast"
-import { Toaster } from "@/components/ui/toaster"
+import { useToast } from "@/components/ui/toast"
 import {
   Dialog,
   DialogContent,
@@ -31,6 +30,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") || "/"
   const supabase = getSupabaseBrowserClient()
+  const { addToast } = useToast()
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,11 +50,7 @@ export default function LoginPage() {
         throw error
       }
 
-      toast({
-        title: "登入成功",
-        description: "歡迎回來！",
-        duration: 3000,
-      })
+      addToast("登入成功，歡迎回來！", "success")
       
       setTimeout(() => {
         router.push(redirectTo)
@@ -62,12 +58,7 @@ export default function LoginPage() {
       }, 1000)
     } catch (error: any) {
       console.error("登入錯誤:", error)
-      toast({
-        title: "登入錯誤",
-        description: "電子郵件或密碼錯誤",
-        variant: "destructive",
-        duration: 5000,
-      })
+      addToast("電子郵件或密碼錯誤", "error")
     } finally {
       setLoading(false)
     }
@@ -78,12 +69,7 @@ export default function LoginPage() {
     setLoading(true)
 
     if (password.length < 6) {
-      toast({
-        title: "密碼太短",
-        description: "密碼必須至少包含 6 個字符",
-        variant: "destructive",
-        duration: 3000,
-      })
+      addToast("密碼必須至少包含 6 個字符", "error")
       setLoading(false)
       return
     }
@@ -103,11 +89,7 @@ export default function LoginPage() {
       }
 
       if (authData.user) {
-        toast({
-          title: "註冊成功",
-          description: "您的帳號已經創建成功！",
-          duration: 5000,
-        })
+        addToast("註冊成功，您的帳號已經創建成功！", "success")
         
         setPassword("")
         setEmail("")
@@ -115,12 +97,7 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       console.error("註冊錯誤:", error)
-      toast({
-        title: "註冊錯誤",
-        description: error.message || "註冊過程中發生錯誤",
-        variant: "destructive",
-        duration: 5000,
-      })
+      addToast(error.message || "註冊過程中發生錯誤", "error")
     } finally {
       setLoading(false)
     }
@@ -128,8 +105,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
-      <Toaster />
-      
       {/* 未註冊用戶提示對話框 */}
       <Dialog open={showRegisterPrompt} onOpenChange={setShowRegisterPrompt}>
         <DialogContent>
@@ -203,7 +178,6 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -228,26 +202,27 @@ export default function LoginPage() {
             <TabsContent value="register">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-email">電子郵件</Label>
+                  <Label htmlFor="email">電子郵件</Label>
                   <Input
-                    id="register-email"
+                    id="email"
                     type="email"
-                    placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="register-password">密碼</Label>
+                  <Label htmlFor="password">密碼</Label>
                   <Input
-                    id="register-password"
+                    id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
                   />
+                  <p className="text-sm text-gray-500">
+                    密碼必須至少包含 6 個字符
+                  </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "註冊中..." : "註冊"}

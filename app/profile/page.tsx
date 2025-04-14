@@ -6,8 +6,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { toast } from "@/components/ui/use-toast"
-import { Toaster } from "@/components/ui/toaster"
+import { useToast } from "@/components/ui/toast"
 
 export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -15,6 +14,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
+  const { addToast } = useToast()
 
   useEffect(() => {
     async function getUser() {
@@ -86,18 +86,9 @@ export default function ProfilePage() {
       }
 
       setAvatarUrl(publicUrl)
-      toast({
-        title: "上傳成功",
-        description: "您的頭像已更新",
-        duration: 3000,
-      })
+      addToast("您的頭像已更新", "success")
     } catch (error: any) {
-      toast({
-        title: "上傳失敗",
-        description: error.message || "上傳頭像時發生錯誤",
-        variant: "destructive",
-        duration: 5000,
-      })
+      addToast(error.message || "上傳頭像時發生錯誤", "error")
     } finally {
       setUploading(false)
     }
@@ -107,7 +98,6 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Toaster />
       <Card className="max-w-md mx-auto">
         <CardHeader>
           <CardTitle>個人資料</CardTitle>

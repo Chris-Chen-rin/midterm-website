@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
-import { Toaster } from "@/components/ui/toaster"
+import { useToast } from "@/components/ui/toast"
 
 interface Message {
   id: string
@@ -26,6 +25,7 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false)
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
+  const { addToast } = useToast()
 
   useEffect(() => {
     async function getMessages() {
@@ -50,12 +50,7 @@ export default function MessagesPage() {
         .order('created_at', { ascending: false })
 
       if (error) {
-        toast({
-          title: "載入失敗",
-          description: error.message,
-          variant: "destructive",
-          duration: 5000,
-        })
+        addToast(error.message, "error")
         return
       }
 
@@ -108,18 +103,9 @@ export default function MessagesPage() {
       if (error) throw error
 
       setNewMessage("")
-      toast({
-        title: "發送成功",
-        description: "您的留言已發布",
-        duration: 3000,
-      })
+      addToast("您的留言已發布", "success")
     } catch (error: any) {
-      toast({
-        title: "發送失敗",
-        description: error.message,
-        variant: "destructive",
-        duration: 5000,
-      })
+      addToast(error.message, "error")
     } finally {
       setSending(false)
     }
@@ -138,18 +124,9 @@ export default function MessagesPage() {
 
       if (error) throw error
 
-      toast({
-        title: "刪除成功",
-        description: "留言已刪除",
-        duration: 3000,
-      })
+      addToast("留言已刪除", "success")
     } catch (error: any) {
-      toast({
-        title: "刪除失敗",
-        description: error.message,
-        variant: "destructive",
-        duration: 5000,
-      })
+      addToast(error.message, "error")
     }
   }
 
@@ -163,7 +140,6 @@ export default function MessagesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Toaster />
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>留言板</CardTitle>
