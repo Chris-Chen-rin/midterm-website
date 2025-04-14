@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import * as React from 'react';
 
 interface Toast {
   id: number;
@@ -12,10 +12,10 @@ interface ToastContextType {
   addToast: (message: string, type: 'success' | 'error') => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+const ToastContext = React.createContext<ToastContextType | undefined>(undefined);
 
 export function useToast() {
-  const context = useContext(ToastContext);
+  const context = React.useContext(ToastContext);
   if (!context) {
     throw new Error('useToast must be used within a ToastProvider');
   }
@@ -23,13 +23,13 @@ export function useToast() {
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = React.useState<Toast[]>([]);
 
-  const addToast = useCallback((message: string, type: 'success' | 'error') => {
+  const addToast = React.useCallback((message: string, type: 'success' | 'error') => {
     const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts((prev: Toast[]) => [...prev, { id, message, type }]);
     setTimeout(() => {
-      setToasts(prev => prev.filter(toast => toast.id !== id));
+      setToasts((prev: Toast[]) => prev.filter((toast: Toast) => toast.id !== id));
     }, 3000);
   }, []);
 
@@ -37,7 +37,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ addToast }}>
       {children}
       <div className="fixed top-4 right-4 z-50 space-y-2">
-        {toasts.map(toast => (
+        {toasts.map((toast: Toast) => (
           <div
             key={toast.id}
             className={`px-6 py-3 rounded-md shadow-lg ${
@@ -50,19 +50,4 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function toast(options: { title: string; description?: string; variant?: 'default' | 'destructive'; duration?: number }) {
-  const type = options.variant === 'destructive' ? 'error' : 'success';
-  const message = options.description || options.title;
-  
-  // 獲取 context
-  try {
-    const context = useContext(ToastContext);
-    if (context) {
-      context.addToast(message, type);
-    }
-  } catch (error) {
-    console.error('Toast error:', error);
-  }
 }
