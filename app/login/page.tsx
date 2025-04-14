@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import { type FormEvent } from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,7 @@ export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
@@ -62,7 +62,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
@@ -96,7 +96,10 @@ export default function LoginPage() {
         setEmail("")
         setPassword("")
         setUsername("")
-        document.querySelector('[value="login"]')?.click()
+        const loginTab = document.querySelector('[data-tab="login"]') as HTMLElement
+        if (loginTab) {
+          loginTab.click()
+        }
       } else {
         toast({
           title: "註冊失敗",
@@ -122,7 +125,7 @@ export default function LoginPage() {
         <Tabs defaultValue="login">
           <CardHeader>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">登入</TabsTrigger>
+              <TabsTrigger value="login" data-tab="login">登入</TabsTrigger>
               <TabsTrigger value="register">註冊</TabsTrigger>
             </TabsList>
           </CardHeader>
