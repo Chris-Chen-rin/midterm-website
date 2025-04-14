@@ -1,39 +1,52 @@
-import { NextResponse } from 'next/server';
-
-// 這裡應該替換成真實的用戶驗證邏輯
-const MOCK_USER = {
-  username: 'admin',
-  password: 'password123'
-};
+import { createServerSupabaseClient } from "@/lib/supabase"
+import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { username, password } = body;
+    const supabase = createServerSupabaseClient()
+    const { email, password } = await request.json()
 
-    // 在實際應用中，這裡應該要連接資料庫進行驗證
-    if (username === MOCK_USER.username) {
-      if (password === MOCK_USER.password) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      if (error.message.includes("Invalid login credentials")) {
         return NextResponse.json(
-          { success: true, message: '登入成功' },
-          { status: 200 }
-        );
-      } else {
-        return NextResponse.json(
-          { success: false, message: '密碼錯誤' },
+          { success: false, message: "電子郵件或密碼錯誤" },
           { status: 401 }
-        );
+        )
       }
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: 400 }
+      )
+    }
+
+    if (data?.user) {
+      return NextResponse.json(
+        { 
+          success: true, 
+          message: "登入成功",
+          user: {
+            id: data.user.id,
+            email: data.user.email,
+          }
+        },
+        { status: 200 }
+      )
     }
 
     return NextResponse.json(
-      { success: false, message: '用戶不存在' },
-      { status: 404 }
-    );
+      { success: false, message: "登入失敗" },
+      { status: 400 }
+    )
   } catch (error) {
+    console.error("Login error:", error)
     return NextResponse.json(
-      { success: false, message: '伺服器錯誤' },
+      { success: false, message: "伺服器錯誤" },
       { status: 500 }
-    );
+    )
   }
 } 

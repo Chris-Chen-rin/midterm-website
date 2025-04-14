@@ -1,10 +1,8 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { getSupabaseBrowserClient } from "@/lib/supabase"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,27 +16,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirect") || "/"
-  const supabase = getSupabaseBrowserClient()
 
-  useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        router.push(redirectTo)
-      }
-    }
-
-    checkUser()
-  }, [router, redirectTo, supabase.auth])
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
@@ -48,7 +28,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       })
 
       const data = await response.json()
@@ -61,19 +41,11 @@ export default function LoginPage() {
         })
         router.push("/profile")
       } else {
-        if (response.status === 404) {
-          toast({
-            title: "登入失敗",
-            description: "此帳號不存在",
-            variant: "destructive",
-          })
-        } else {
-          toast({
-            title: "登入失敗",
-            description: "請檢查您的用戶名和密碼",
-            variant: "destructive",
-          })
-        }
+        toast({
+          title: "登入失敗",
+          description: data.message || "請檢查您的電子郵件和密碼",
+          variant: "destructive",
+        })
       }
     } catch (err) {
       toast({
@@ -86,40 +58,14 @@ export default function LoginPage() {
     }
   }
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) throw error
-
-      router.push(redirectTo)
-      router.refresh()
-    } catch (error: any) {
-      console.error("Error signing in:", error.message)
-      toast({
-        title: "Error signing in",
-        description: error.message,
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    if (!username.trim()) {
+    if (!username.trim() || !email.trim() || !password.trim()) {
       toast({
         title: "註冊失敗",
-        description: "請輸入用戶名",
+        description: "請填寫所有必要欄位",
         variant: "destructive",
       })
       setLoading(false)
@@ -132,7 +78,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password, email }),
+        body: JSON.stringify({ username, email, password }),
       })
 
       const data = await response.json()
@@ -140,24 +86,16 @@ export default function LoginPage() {
       if (response.ok) {
         toast({
           title: "註冊成功",
-          description: "您的帳號已成功創建",
+          description: "您的帳號已成功創建，請登入",
           variant: "default",
         })
         router.push("/login")
       } else {
-        if (response.status === 409) {
-          toast({
-            title: "註冊失敗",
-            description: "此用戶名已被使用",
-            variant: "destructive",
-          })
-        } else {
-          toast({
-            title: "註冊失敗",
-            description: data.message || "註冊過程中發生錯誤",
-            variant: "destructive",
-          })
-        }
+        toast({
+          title: "註冊失敗",
+          description: data.message || "註冊過程中發生錯誤",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       toast({
@@ -184,15 +122,15 @@ export default function LoginPage() {
 
           <CardContent>
             <TabsContent value="login">
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">用戶名</Label>
+                  <Label htmlFor="email">電子郵件</Label>
                   <Input
-                    id="username"
-                    type="text"
-                    placeholder="請輸入用戶名"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    id="email"
+                    type="email"
+                    placeholder="請輸入電子郵件"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
