@@ -40,6 +40,7 @@ export default function LoginPage() {
           description: "歡迎回來！",
           variant: "default",
         })
+        console.log("登入成功")
         setTimeout(() => {
           router.push("/")
           router.refresh()
@@ -93,6 +94,11 @@ export default function LoginPage() {
           description: "您的帳號已成功創建，請登入",
           variant: "default",
         })
+        console.log("註冊成功")
+        setTimeout(() => {
+          router.push("/login")
+          router.refresh()
+        }, 1000)
         setEmail("")
         setPassword("")
         setUsername("")
