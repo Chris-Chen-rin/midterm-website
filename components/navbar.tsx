@@ -16,6 +16,8 @@ export default function Navbar({ user, avatarUrl }: NavbarProps) {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
 
+  console.log("User in Navbar:", user)
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.refresh()
