@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
   const [loading, setLoading] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -35,12 +36,12 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (response.ok) {
+        setIsLoggedIn(true)
         toast({
           title: "登入成功",
           description: "歡迎回來！",
           variant: "default",
         })
-        console.log("登入成功")
         setTimeout(() => {
           router.push("/")
           router.refresh()
@@ -94,7 +95,6 @@ export default function LoginPage() {
           description: "您的帳號已成功創建，請登入",
           variant: "default",
         })
-        console.log("註冊成功")
         setTimeout(() => {
           router.push("/login")
           router.refresh()
@@ -110,6 +110,43 @@ export default function LoginPage() {
         toast({
           title: "註冊失敗",
           description: data.message || "註冊過程中發生錯誤",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "系統錯誤",
+        description: "發生錯誤，請稍後再試",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    setLoading(true)
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      })
+
+      if (response.ok) {
+        setIsLoggedIn(false)
+        toast({
+          title: "登出成功",
+          description: "您已成功登出",
+          variant: "default",
+        })
+        setTimeout(() => {
+          router.push("/login")
+          router.refresh()
+        }, 1000)
+      } else {
+        toast({
+          title: "登出失敗",
+          description: "登出過程中發生錯誤",
           variant: "destructive",
         })
       }
@@ -162,7 +199,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "登入中..." : "登入"}
+                  {loading ? (isLoggedIn ? "登出中..." : "登入中...") : (isLoggedIn ? "登出" : "登入")}
                 </Button>
               </form>
             </TabsContent>
