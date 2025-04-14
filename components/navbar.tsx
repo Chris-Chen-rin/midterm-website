@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -8,8 +10,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { User } from "@supabase/supabase-js"
 
-export default function Navbar({ user, avatarUrl }: { user: any; avatarUrl: string | null }) {
+interface NavbarProps {
+  user: User | null
+  avatarUrl: string | null
+}
+
+export default function Navbar({ user, avatarUrl }: NavbarProps) {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
 
