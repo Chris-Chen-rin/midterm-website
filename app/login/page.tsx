@@ -151,7 +151,7 @@ export default function LoginPage() {
                     type="password"
                     placeholder="請輸入密碼"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                     required
                   />
                 </div>
@@ -192,7 +192,7 @@ export default function LoginPage() {
                     type="password"
                     placeholder="請輸入密碼"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                     required
                   />
                 </div>
