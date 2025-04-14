@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "@/components/ui/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 
 export default function LoginPage() {
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +40,10 @@ export default function LoginPage() {
           description: "歡迎回來！",
           variant: "default",
         })
-        router.push("/profile")
+        setTimeout(() => {
+          router.push("/")
+          router.refresh()
+        }, 1000)
       } else {
         toast({
           title: "登入失敗",
@@ -89,7 +93,10 @@ export default function LoginPage() {
           description: "您的帳號已成功創建，請登入",
           variant: "default",
         })
-        router.push("/login")
+        setEmail("")
+        setPassword("")
+        setUsername("")
+        document.querySelector('[value="login"]')?.click()
       } else {
         toast({
           title: "註冊失敗",
