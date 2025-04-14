@@ -1,10 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  optimizeFonts: true,
   experimental: {
     optimizeCss: true
   },
-  headers: async () => {
+  async headers() {
     return [
       {
         source: '/:path*',
