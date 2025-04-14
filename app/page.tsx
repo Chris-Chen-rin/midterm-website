@@ -1,6 +1,9 @@
-import Link from "next/link"
+'use client';
 
-export default function Home() {
+import Link from "next/link"
+import { FC } from "react"
+
+const Home: FC = () => {
   return (
     <div className="relative min-h-[calc(100vh-4rem)]">
       {/* Background image */}
@@ -35,13 +38,15 @@ export default function Home() {
             View Users
           </Link>
           <Link
-            href="/users/create"
+            href="/login"
             className="px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center hover:bg-primary/90 transition-colors"
           >
-            Create a User
+            Login/Register
           </Link>
         </div>
       </div>
     </div>
   )
 }
+
+export default Home
