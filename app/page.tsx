@@ -7,7 +7,7 @@ export default function Home() {
       <div
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{
-          backgroundImage: "url('/placeholder.svg?height=1080&width=1920')",
+          backgroundImage: "url('/images/background.svg?height=1080&width=1920')",
           // Replace the above with your actual image path when available
         }}
       >
@@ -21,7 +21,7 @@ export default function Home() {
         <p className="text-xl text-center max-w-2xl mb-8">
           This is the main page of our multi-page website. Use the navigation at the top to explore other pages.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             href="/about"
             className="px-6 py-3 bg-white/20 backdrop-blur-sm rounded-lg text-center hover:bg-white/30 transition-colors"
@@ -29,16 +29,10 @@ export default function Home() {
             Learn About Us
           </Link>
           <Link
-            href="/users"
-            className="px-6 py-3 bg-white/20 backdrop-blur-sm rounded-lg text-center hover:bg-white/30 transition-colors"
-          >
-            View Users
-          </Link>
-          <Link
-            href="/users/create"
+            href="/login"
             className="px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center hover:bg-primary/90 transition-colors"
           >
-            Create a User
+            登入
           </Link>
         </div>
       </div>

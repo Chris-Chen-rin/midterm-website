@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") || "/"
@@ -36,6 +37,32 @@ export default function LoginPage() {
 
     checkUser()
   }, [router, redirectTo, supabase.auth])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setLoading(true)
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      })
+
+      if (response.ok) {
+        router.push("/profile") // 登入成功後導向個人資料頁面
+      } else {
+        setError("登入失敗，請檢查您的用戶名和密碼")
+      }
+    } catch (err) {
+      setError("發生錯誤，請稍後再試")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -114,7 +141,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Toaster />
       <Card className="w-full max-w-md">
         <Tabs defaultValue="login">
@@ -127,15 +154,15 @@ export default function LoginPage() {
 
           <CardContent>
             <TabsContent value="login">
-              <form onSubmit={handleSignIn} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="username">Username</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="username"
+                    type="text"
+                    placeholder="johndoe"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                   />
                 </div>
@@ -149,6 +176,9 @@ export default function LoginPage() {
                     required
                   />
                 </div>
+                {error && (
+                  <div className="text-red-500 text-sm text-center">{error}</div>
+                )}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Logging in..." : "Login"}
                 </Button>
