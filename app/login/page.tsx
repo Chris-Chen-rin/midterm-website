@@ -78,10 +78,16 @@ export default function LoginPage() {
     }
 
     try {
-      // First register the user
+      // First register the user with email confirmation disabled
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            username: username,
+          }
+        }
       })
 
       if (authError) throw authError
@@ -93,18 +99,20 @@ export default function LoginPage() {
         if (profileError) throw profileError
 
         toast({
-          title: "Registration successful",
-          description: "Your account has been created successfully.",
+          title: "註冊成功",
+          description: "您的帳號已經創建成功，現在可以登入了。",
         })
 
-        // Redirect to the intended page
-        router.push(redirectTo)
-        router.refresh()
+        // 自動切換到登入頁籤
+        const loginTab = document.querySelector('[value="login"]') as HTMLElement
+        if (loginTab) {
+          loginTab.click()
+        }
       }
     } catch (error: any) {
       console.error("Error signing up:", error.message)
       toast({
-        title: "Error signing up",
+        title: "註冊錯誤",
         description: error.message,
         variant: "destructive",
       })
