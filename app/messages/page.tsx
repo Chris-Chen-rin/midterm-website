@@ -1,17 +1,15 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "@/components/ui/use-toast"
-import { Trash2 } from "lucide-react"
 import { Toaster } from "@/components/ui/toaster"
+import { Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 type Message = {
   id: string
@@ -24,224 +22,271 @@ type Message = {
   }
 }
 
+type SupabaseMessage = {
+  id: string
+  content: string
+  created_at: string
+  user_id: string
+  profiles: {
+    username: string
+    avatar_url: string | null
+  }
+}
+
 export default function MessagesPage() {
-  const [user, setUser] = useState<any>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
 
   useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.push("/login?redirect=/messages")
-        return
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) throw error
+        if (!session?.user) {
+          router.push("/login")
+          return
+        }
+        setUser(session.user)
+      } catch (error) {
+        console.error("Auth error:", error)
+        router.push("/login")
       }
-
-      setUser(user)
-      fetchMessages()
     }
 
-    const fetchMessages = async () => {
-      setLoading(true)
+    checkAuth()
+  }, [supabase, router])
 
+  useEffect(() => {
+    if (!user) return
+
+    const fetchMessages = async () => {
+      try {
+        console.log("正在獲取訊息...")
+        const { data, error } = await supabase
+          .from('messages')
+          .select(`
+            id,
+            content,
+            created_at,
+            user_id,
+            profiles (
+              username,
+              avatar_url
+            )
+          `)
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error("獲取訊息錯誤:", error)
+          throw error
+        }
+        
+        console.log("獲取到的訊息:", data)
+        const typedData = data as unknown as SupabaseMessage[]
+        setMessages(typedData?.map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          created_at: msg.created_at,
+          user_id: msg.user_id,
+          profiles: {
+            username: msg.profiles.username,
+            avatar_url: msg.profiles.avatar_url
+          }
+        })) || [])
+      } catch (error: any) {
+        console.error('Error fetching messages:', error)
+        toast({
+          title: "錯誤",
+          description: error.message || "無法獲取訊息",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMessages()
+
+    const channel = supabase
+      .channel('messages')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+        fetchMessages()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, user])
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newMessage.trim() || !user) return
+
+    try {
       const { data, error } = await supabase
-        .from("messages")
+        .from('messages')
+        .insert([
+          {
+            content: newMessage,
+            user_id: user.id
+          }
+        ])
         .select(`
           id,
           content,
           created_at,
           user_id,
-          profiles (
+          profiles:user_id (
             username,
             avatar_url
           )
         `)
-        .order("created_at", { ascending: false })
+        .single()
 
-      if (error) {
-        console.error("Error fetching messages:", error)
+      if (error) throw error
+
+      if (data) {
+        const typedData = data as unknown as {
+          id: string;
+          content: string;
+          created_at: string;
+          user_id: string;
+          profiles: {
+            username: string;
+            avatar_url: string | null;
+          };
+        };
+        
+        setMessages(prev => [{
+          id: typedData.id,
+          content: typedData.content,
+          created_at: typedData.created_at,
+          user_id: typedData.user_id,
+          profiles: {
+            username: typedData.profiles.username,
+            avatar_url: typedData.profiles.avatar_url
+          }
+        }, ...prev])
+        setNewMessage('')
         toast({
-          title: "Error fetching messages",
-          description: error.message,
-          variant: "destructive",
+          title: "成功",
+          description: "訊息發送成功！",
+          variant: "default",
         })
-        return
       }
-
-      setMessages(data || [])
-      setLoading(false)
-    }
-
-    checkUser()
-
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel("messages-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "messages",
-        },
-        () => {
-          fetchMessages()
-        },
-      )
-      .subscribe()
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [router, supabase])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!user) {
+    } catch (error) {
+      console.error('發送訊息失敗:', error)
       toast({
-        title: "Authentication required",
-        description: "Please log in to post a message",
+        title: "錯誤",
+        description: "發送訊息失敗，請稍後再試",
         variant: "destructive",
       })
-      return
     }
+  }
 
-    if (!newMessage.trim()) return
-
-    setSubmitting(true)
+  const handleDelete = async (messageId: string) => {
+    if (!user) return
 
     try {
-      const { error } = await supabase.from("messages").insert({
-        content: newMessage.trim(),
-        user_id: user.id,
-      })
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('user_id', user.id)
 
       if (error) throw error
 
-      setNewMessage("")
-    } catch (error: any) {
-      console.error("Error posting message:", error.message)
       toast({
-        title: "Error posting message",
-        description: error.message,
-        variant: "destructive",
-      })
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase.from("messages").delete().eq("id", id)
-
-      if (error) throw error
-
-      // Update local state
-      setMessages(messages.filter((message) => message.id !== id))
-
-      toast({
-        title: "Message deleted",
-        description: "Your message has been deleted successfully",
+        title: "成功",
+        description: "訊息已刪除",
+        variant: "default",
       })
     } catch (error: any) {
-      console.error("Error deleting message:", error.message)
+      console.error("刪除訊息錯誤:", error)
       toast({
-        title: "Error deleting message",
-        description: error.message,
+        title: "錯誤",
+        description: error.message || "無法刪除訊息",
         variant: "destructive",
       })
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleString()
-  }
-
-  if (loading && !user) {
+  if (loading) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-12">
-        <p>Loading...</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-4xl font-bold text-center mb-8">載入中...</h1>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="container mx-auto px-4 py-8">
       <Toaster />
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Message Board</CardTitle>
-          <CardDescription>Share your thoughts with others</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Textarea
-              placeholder="Write your message here..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="min-h-[100px]"
-              required
-            />
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Posting..." : "Post Message"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-8">訊息牆</h1>
 
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Messages</h2>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>發送新訊息</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSendMessage} className="space-y-4">
+              <Textarea
+                placeholder="輸入您的訊息..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className="min-h-[100px]"
+              />
+              <Button type="submit" disabled={!newMessage.trim()}>
+                發送
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-        {loading ? (
-          <div className="text-center p-8">Loading messages...</div>
-        ) : messages.length === 0 ? (
-          <div className="text-center p-8 bg-muted rounded-md">No messages yet. Be the first to post!</div>
-        ) : (
-          messages.map((message) => (
-            <Card key={message.id} className="overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex p-4">
-                  <div className="mr-4 flex-shrink-0">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={message.profiles.avatar_url || ""} alt={message.profiles.username} />
-                      <AvatarFallback>{message.profiles.username.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                  <div className="flex-grow">
-                    <div className="flex justify-between items-start">
+        <div className="space-y-4">
+          {messages.map((message) => (
+            <Card key={message.id}>
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <Avatar>
+                    <AvatarImage src={message.profiles.avatar_url || ""} />
+                    <AvatarFallback>{message.profiles.username.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{message.profiles.username}</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(message.created_at)}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(message.created_at).toLocaleString()}
+                        </p>
                       </div>
-                      {user && user.id === message.user_id && (
+                      {user?.id === message.user_id && (
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(message.id)}
-                          aria-label="Delete message"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
-                    <div className="mt-2 whitespace-pre-wrap">{message.content}</div>
+                    <p className="mt-2">{message.content}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))
-        )}
+          ))}
+        </div>
       </div>
     </div>
   )
 }
+

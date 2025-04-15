@@ -2,54 +2,45 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import Navbar from "@/components/navbar"
-import { cookies } from "next/headers"
 import { createServerSupabaseClient } from "@/lib/supabase"
+import Navbar from "@/components/navbar"
 import { Toaster } from "@/components/ui/toaster"
+import { cookies, headers } from "next/headers" // ✅ 修正
+import { User } from "@supabase/supabase-js"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Midterm miniproject",
-  description: "A website with multiple pages and navigation",
-    generator: 'v0.dev'
+  title: "My Website",
+  description: "A website built with Next.js and Supabase",
 }
 
 export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
-  const cookieStore = cookies()
-  const supabase = createServerSupabaseClient()
+}) {
+  const supabase = createServerSupabaseClient({ // ✅ 正確建立 server client
+    cookies,
+    headers,
+  })
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  let avatarUrl = null
-
-  if (user) {
-    const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).single()
-
-    if (data) {
-      avatarUrl = data.avatar_url
-    }
+  let user: User | null = null
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession()
+    if (error) throw error
+    user = session?.user || null
+  } catch (error) {
+    console.error("Error getting session in layout:", error)
   }
-
-  console.log("User fetched from Supabase:", user)
-  console.log("Avatar URL fetched:", avatarUrl)
 
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Navbar user={user} avatarUrl={avatarUrl} />
+        <Navbar user={user} />
         <main className="container mx-auto px-4 py-8">{children}</main>
         <Toaster />
       </body>
     </html>
   )
 }
-
-
-import './globals.css'

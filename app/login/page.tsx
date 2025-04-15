@@ -10,53 +10,48 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
+import { getSupabaseBrowserClient } from "@/lib/supabase"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
   const [loading, setLoading] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+  const supabase = getSupabaseBrowserClient()
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      const data = await response.json()
+      if (error) {
+        throw error
+      }
 
-      if (response.ok) {
-        setIsLoggedIn(true)
+      if (data.session) {
         toast({
           title: "登入成功",
           description: "歡迎回來！",
           variant: "default",
         })
+        console.log("登入成功，會話資訊：", data.session)
         setTimeout(() => {
           router.push("/")
           router.refresh()
-        }, 1000)
-      } else {
-        toast({
-          title: "登入失敗",
-          description: data.message || "請檢查您的電子郵件和密碼",
-          variant: "destructive",
-        })
+        }, 300)
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("登入錯誤：", err)
       toast({
-        title: "系統錯誤",
-        description: "發生錯誤，請稍後再試",
+        title: "登入失敗",
+        description: err.message || "請檢查您的電子郵件和密碼",
         variant: "destructive",
       })
     } finally {
@@ -79,26 +74,26 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username,
+          },
         },
-        body: JSON.stringify({ username, email, password }),
       })
 
-      const data = await response.json()
+      if (error) {
+        throw error
+      }
 
-      if (response.ok) {
+      if (data.user) {
         toast({
           title: "註冊成功",
           description: "您的帳號已成功創建，請登入",
           variant: "default",
         })
-        setTimeout(() => {
-          router.push("/login")
-          router.refresh()
-        }, 1000)
         setEmail("")
         setPassword("")
         setUsername("")
@@ -106,54 +101,12 @@ export default function LoginPage() {
         if (loginTab) {
           loginTab.click()
         }
-      } else {
-        toast({
-          title: "註冊失敗",
-          description: data.message || "註冊過程中發生錯誤",
-          variant: "destructive",
-        })
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("註冊錯誤：", error)
       toast({
-        title: "系統錯誤",
-        description: "發生錯誤，請稍後再試",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleLogout = async () => {
-    setLoading(true)
-
-    try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-      })
-
-      if (response.ok) {
-        setIsLoggedIn(false)
-        toast({
-          title: "登出成功",
-          description: "您已成功登出",
-          variant: "default",
-        })
-        setTimeout(() => {
-          router.push("/login")
-          router.refresh()
-        }, 1000)
-      } else {
-        toast({
-          title: "登出失敗",
-          description: "登出過程中發生錯誤",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "系統錯誤",
-        description: "發生錯誤，請稍後再試",
+        title: "註冊失敗",
+        description: error.message || "註冊過程中發生錯誤",
         variant: "destructive",
       })
     } finally {
@@ -194,12 +147,13 @@ export default function LoginPage() {
                     type="password"
                     placeholder="請輸入密碼"
                     value={password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
+                    autoComplete="current-password"
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (isLoggedIn ? "登出中..." : "登入中...") : (isLoggedIn ? "登出" : "登入")}
+                  {loading ? "登入中..." : "登入"}
                 </Button>
               </form>
             </TabsContent>

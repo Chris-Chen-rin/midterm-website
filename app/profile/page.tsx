@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Upload } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "@/components/ui/use-toast"
@@ -33,15 +33,10 @@ export default function ProfilePage() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!user) {
-        router.push("/login?redirect=/profile")
-        return
-      }
-
       setUser(user)
 
       // Fetch profile data
-      const { data, error } = await supabase.from("profiles").select("username, avatar_url").eq("id", user.id).single()
+      const { data, error } = await supabase.from("profiles").select("username, avatar_url").eq("id", user?.id).single()
 
       if (error) {
         console.error("Error fetching profile:", error)
@@ -59,7 +54,7 @@ export default function ProfilePage() {
     }
 
     fetchUser()
-  }, [router, supabase])
+  }, [supabase])
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -167,12 +162,12 @@ export default function ProfilePage() {
   return (
     <div className="container max-w-md py-12">
       <Toaster />
-      <h1 className="text-3xl font-bold text-center mb-6">Your Profile</h1>
+      <h1 className="text-3xl font-bold text-center mb-6">個人資料</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-          <CardDescription>Update your profile information and avatar</CardDescription>
+          <CardTitle>個人資訊</CardTitle>
+          <CardDescription>更新你的個人資訊和頭像</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {error && (
@@ -184,33 +179,49 @@ export default function ProfilePage() {
 
           <div className="flex flex-col items-center gap-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={avatarUrl || undefined} alt={username} />
+              <AvatarImage src={avatarUrl || ""} alt={username} />
               <AvatarFallback>{username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
             </Avatar>
 
             <div className="w-full">
               <Label htmlFor="avatar" className="block mb-2">
-                Profile Picture (JPG or PNG only)
+                頭像 (僅限 JPG 或 PNG)
               </Label>
-              <Input id="avatar" type="file" accept="image/jpeg, image/png" onChange={handleAvatarChange} />
-              <p className="text-xs text-muted-foreground mt-1">Maximum file size: 2MB</p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById("avatar-upload")?.click()}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  選擇圖片
+                </Button>
+                <Input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/jpeg, image/png"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">最大檔案大小：2MB</p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">電子郵件</Label>
             <Input id="email" value={user?.email || ""} disabled />
-            <p className="text-xs text-muted-foreground">Your email cannot be changed</p>
+            <p className="text-xs text-muted-foreground">無法更改電子郵件</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">用戶名稱</Label>
             <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
           </div>
         </CardContent>
         <CardFooter>
           <Button onClick={updateProfile} disabled={updating || !username.trim()} className="w-full">
-            {updating ? "Updating..." : "Update Profile"}
+            {updating ? "更新中..." : "更新個人資料"}
           </Button>
         </CardFooter>
       </Card>

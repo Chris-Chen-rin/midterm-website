@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     })
 
     if (error) {
+      console.error("Login error:", error)
       return NextResponse.json(
         { 
           success: false, 
@@ -27,16 +28,31 @@ export async function POST(request: Request) {
     const cookieStore = cookies()
     const session = data.session
     if (session) {
-      cookieStore.set('sb-access-token', session.access_token, {
+      const response = NextResponse.json(
+        { 
+          success: true, 
+          message: "登入成功",
+          user: data.user 
+        },
+        { status: 200 }
+      )
+
+      response.cookies.set('sb-access-token', session.access_token, {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7 // 7 days
       })
-      cookieStore.set('sb-refresh-token', session.refresh_token, {
+      response.cookies.set('sb-refresh-token', session.refresh_token, {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7 // 7 days
       })
+
+      return response
     }
 
     return NextResponse.json(
