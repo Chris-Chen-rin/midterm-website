@@ -38,6 +38,7 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const [userProfile, setUserProfile] = useState<any>(null)
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
 
@@ -51,6 +52,19 @@ export default function MessagesPage() {
           return
         }
         setUser(session.user)
+
+        // 獲取用戶個人資料
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+
+        if (profileError) {
+          console.error("獲取個人資料錯誤:", profileError)
+        } else {
+          setUserProfile(profile)
+        }
       } catch (error) {
         console.error("Auth error:", error)
         router.push("/login")
@@ -65,40 +79,47 @@ export default function MessagesPage() {
 
     const fetchMessages = async () => {
       try {
-        console.log("正在獲取訊息...")
-        const { data, error } = await supabase
+        console.log("正在獲取訊息...", user.id)
+        const { data: messages, error: messagesError } = await supabase
           .from('messages')
-          .select(`
-            id,
-            content,
-            created_at,
-            user_id,
-            profiles (
-              username,
-              avatar_url
-            )
-          `)
+          .select('*')
           .order('created_at', { ascending: false })
 
-        if (error) {
-          console.error("獲取訊息錯誤:", error)
-          throw error
+        if (messagesError) {
+          console.error("獲取訊息錯誤:", messagesError.message, messagesError.details, messagesError.hint)
+          throw messagesError
         }
-        
-        console.log("獲取到的訊息:", data)
-        const typedData = data as unknown as SupabaseMessage[]
-        setMessages(typedData?.map(msg => ({
-          id: msg.id,
-          content: msg.content,
-          created_at: msg.created_at,
-          user_id: msg.user_id,
-          profiles: {
-            username: msg.profiles.username,
-            avatar_url: msg.profiles.avatar_url
+
+        // 獲取所有相關的用戶資料
+        const userIds = messages?.map(msg => msg.user_id) || []
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', userIds)
+
+        if (profilesError) {
+          console.error("獲取用戶資料錯誤:", profilesError.message, profilesError.details, profilesError.hint)
+          throw profilesError
+        }
+
+        // 合併訊息和用戶資料
+        const mergedData = messages?.map(msg => {
+          const profile = profiles?.find(p => p.id === msg.user_id)
+          return {
+            id: msg.id,
+            content: msg.content,
+            created_at: msg.created_at,
+            user_id: msg.user_id,
+            profiles: {
+              username: profile?.username || '未知用戶',
+              avatar_url: profile?.avatar_url || null
+            }
           }
-        })) || [])
+        }) || []
+
+        setMessages(mergedData)
       } catch (error: any) {
-        console.error('Error fetching messages:', error)
+        console.error('Error fetching messages:', error.message, error.details, error.hint)
         toast({
           title: "錯誤",
           description: error.message || "無法獲取訊息",
@@ -128,6 +149,7 @@ export default function MessagesPage() {
     if (!newMessage.trim() || !user) return
 
     try {
+      console.log("正在發送訊息...", user.id)
       const { data, error } = await supabase
         .from('messages')
         .insert([
@@ -136,40 +158,35 @@ export default function MessagesPage() {
             user_id: user.id
           }
         ])
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
+        .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error("發送訊息錯誤:", error.message, error.details, error.hint)
+        throw error
+      }
 
       if (data) {
-        const typedData = data as unknown as {
-          id: string;
-          content: string;
-          created_at: string;
-          user_id: string;
-          profiles: {
-            username: string;
-            avatar_url: string | null;
-          };
-        };
-        
+        // 獲取用戶資料
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (profileError) {
+          console.error("獲取用戶資料錯誤:", profileError.message, profileError.details, profileError.hint)
+          throw profileError
+        }
+
         setMessages(prev => [{
-          id: typedData.id,
-          content: typedData.content,
-          created_at: typedData.created_at,
-          user_id: typedData.user_id,
+          id: data.id,
+          content: data.content,
+          created_at: data.created_at,
+          user_id: data.user_id,
           profiles: {
-            username: typedData.profiles.username,
-            avatar_url: typedData.profiles.avatar_url
+            username: profile?.username || '未知用戶',
+            avatar_url: profile?.avatar_url || null
           }
         }, ...prev])
         setNewMessage('')
@@ -179,11 +196,11 @@ export default function MessagesPage() {
           variant: "default",
         })
       }
-    } catch (error) {
-      console.error('發送訊息失敗:', error)
+    } catch (error: any) {
+      console.error('發送訊息失敗:', error.message, error.details, error.hint)
       toast({
         title: "錯誤",
-        description: "發送訊息失敗，請稍後再試",
+        description: error.message || "發送訊息失敗，請稍後再試",
         variant: "destructive",
       })
     }
@@ -229,21 +246,30 @@ export default function MessagesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <Toaster />
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">訊息牆</h1>
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-8">留言板</h1>
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>發送新訊息</CardTitle>
+            <CardTitle>發送新留言</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSendMessage} className="space-y-4">
-              <Textarea
-                placeholder="輸入您的訊息..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="min-h-[100px]"
-              />
+              <div className="flex gap-4">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage 
+                    src={userProfile?.avatar_url || ""} 
+                    alt={userProfile?.username || user?.email || "User"}
+                  />
+                  <AvatarFallback>{userProfile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                </Avatar>
+                <Textarea
+                  placeholder="輸入您的留言..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  className="min-h-[100px] flex-1"
+                />
+              </div>
               <Button type="submit" disabled={!newMessage.trim()}>
                 發送
               </Button>
@@ -255,30 +281,34 @@ export default function MessagesPage() {
           {messages.map((message) => (
             <Card key={message.id}>
               <CardContent className="pt-6">
-                <div className="flex items-start gap-4">
-                  <Avatar>
-                    <AvatarImage src={message.profiles.avatar_url || ""} />
-                    <AvatarFallback>{message.profiles.username.charAt(0)}</AvatarFallback>
+                <div className="flex gap-4">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage 
+                      src={message.profiles.avatar_url || ""} 
+                      alt={message.profiles.username}
+                    />
+                    <AvatarFallback>{message.profiles.username.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-2">
                       <div>
-                        <p className="font-medium">{message.profiles.username}</p>
-                        <p className="text-sm text-gray-500">
+                        <span className="font-semibold">{message.profiles.username}</span>
+                        <span className="text-sm text-gray-500 ml-2">
                           {new Date(message.created_at).toLocaleString()}
-                        </p>
+                        </span>
                       </div>
                       {user?.id === message.user_id && (
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(message.id)}
+                          className="text-gray-500 hover:text-red-500"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
-                    <p className="mt-2">{message.content}</p>
+                    <p className="text-gray-800 whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
               </CardContent>

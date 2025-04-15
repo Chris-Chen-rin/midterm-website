@@ -21,6 +21,7 @@ export default function ProfilePage() {
   const [username, setUsername] = useState("")
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarFileName, setAvatarFileName] = useState<string>("")
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,24 +65,25 @@ export default function ProfilePage() {
       // Check file type
       if (!file.type.match(/image\/(jpeg|png)/)) {
         toast({
-          title: "Invalid file type",
-          description: "Only JPG and PNG images are allowed",
+          title: "無效的檔案類型",
+          description: "只允許 JPG 和 PNG 圖片",
           variant: "destructive",
         })
         return
       }
 
-      // Check file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
         toast({
-          title: "File too large",
-          description: "Maximum file size is 2MB",
+          title: "檔案太大",
+          description: "最大檔案大小為 5MB",
           variant: "destructive",
         })
         return
       }
 
       setAvatarFile(file)
+      setAvatarFileName(file.name)
 
       // Create a preview
       const reader = new FileReader()
@@ -104,24 +106,41 @@ export default function ProfilePage() {
       // Upload avatar if a new one was selected
       if (avatarFile) {
         const fileExt = avatarFile.name.split(".").pop()
-        const filePath = `avatars/${user.id}.${fileExt}`
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`
 
-        const { error: uploadError, data } = await supabase.storage
+        // 先嘗試刪除舊的頭像（如果存在）
+        if (avatarUrl && avatarUrl.includes('avatars')) {
+          const oldFileName = avatarUrl.split("/").pop()
+          if (oldFileName) {
+            await supabase.storage
+              .from("avatars")
+              .remove([`${user.id}/${oldFileName}`])
+          }
+        }
+
+        // 上傳新的頭像
+        const { error: uploadError } = await supabase.storage
           .from("avatars")
-          .upload(filePath, avatarFile, { upsert: true })
+          .upload(fileName, avatarFile, {
+            upsert: true,
+            cacheControl: "3600"
+          })
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error("Upload error:", uploadError)
+          throw uploadError
+        }
 
-        // Get the public URL
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("avatars").getPublicUrl(filePath)
+        // 獲取公開 URL
+        const { data: { publicUrl } } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(fileName)
 
         newAvatarUrl = publicUrl
       }
 
-      // Update profile
-      const { error } = await supabase
+      // 更新個人資料
+      const { error: updateError } = await supabase
         .from("profiles")
         .update({
           username,
@@ -130,19 +149,23 @@ export default function ProfilePage() {
         })
         .eq("id", user.id)
 
-      if (error) throw error
+      if (updateError) {
+        console.error("Update error:", updateError)
+        throw updateError
+      }
 
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
+        title: "個人資料已更新",
+        description: "您的個人資料已成功更新",
       })
 
-      // Refresh the page to show updated data
+      // 刷新頁面以顯示更新後的數據
       router.refresh()
     } catch (error: any) {
-      setError(error.message || "Failed to update profile")
+      console.error("Profile update error:", error)
+      setError(error.message || "更新個人資料失敗")
       toast({
-        title: "Error updating profile",
+        title: "更新個人資料失敗",
         description: error.message,
         variant: "destructive",
       })
@@ -199,12 +222,17 @@ export default function ProfilePage() {
                 <Input
                   id="avatar-upload"
                   type="file"
-                  accept="image/jpeg, image/png"
+                  accept=".jpg,.jpeg,.png"
                   onChange={handleAvatarChange}
                   className="hidden"
                 />
+                {avatarFileName && (
+                  <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                    {avatarFileName}
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">最大檔案大小：2MB</p>
+              <p className="text-xs text-muted-foreground mt-1">僅限 JPG 或 PNG，最大檔案大小：5MB</p>
             </div>
           </div>
 
@@ -216,11 +244,20 @@ export default function ProfilePage() {
 
           <div className="space-y-2">
             <Label htmlFor="username">用戶名稱</Label>
-            <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <Input 
+              id="username" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
+              required 
+            />
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={updateProfile} disabled={updating || !username.trim()} className="w-full">
+          <Button 
+            onClick={updateProfile} 
+            disabled={updating || !username.trim()} 
+            className="w-full"
+          >
             {updating ? "更新中..." : "更新個人資料"}
           </Button>
         </CardFooter>

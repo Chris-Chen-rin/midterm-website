@@ -56,27 +56,33 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 min-h-screen" style={{
+      backgroundImage: "url('/images/background.svg')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      backgroundAttachment: "fixed"
+    }}>
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">
+        <h1 className="text-4xl font-bold text-center mb-8 text-white">
           {user ? `歡迎回來，${user.email}` : "歡迎來到我們的網站"}
         </h1>
         
         <div className="grid gap-6">
-          <Card>
+          <Card className="bg-white/90">
             <CardHeader>
               <CardTitle>關於我們</CardTitle>
               <CardDescription>了解更多關於我們的信息</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600">
-                這是一個展示 Next.js 和 Supabase 整合的示例網站。
+                這是一個我的期中小專題報告網站(雖然有點遲交，麻煩助教大人有大量不要在意)。
               </p>
             </CardContent>
           </Card>
 
           {user ? (
-            <Card>
+            <Card className="bg-white/90">
               <CardHeader>
                 <CardTitle>快速連結</CardTitle>
                 <CardDescription>訪問您的個人空間</CardDescription>
@@ -102,7 +108,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card className="bg-white/90">
               <CardHeader>
                 <CardTitle>登入或註冊</CardTitle>
                 <CardDescription>開始使用我們的服務</CardDescription>

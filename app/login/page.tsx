@@ -97,10 +97,12 @@ export default function LoginPage() {
         setEmail("")
         setPassword("")
         setUsername("")
-        const loginTab = document.querySelector('[data-tab="login"]') as HTMLElement
-        if (loginTab) {
-          loginTab.click()
-        }
+        setTimeout(() => {
+          const loginTab = document.querySelector('[data-tab="login"]') as HTMLElement
+          if (loginTab) {
+            loginTab.click()
+          }
+        }, 300)
       }
     } catch (error: any) {
       console.error("註冊錯誤：", error)
