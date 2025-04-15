@@ -218,6 +218,9 @@ export default function MessagesPage() {
 
       if (error) throw error
 
+      // 更新本地狀態
+      setMessages(prev => prev.filter(msg => msg.id !== messageId))
+
       toast({
         title: "成功",
         description: "訊息已刪除",
