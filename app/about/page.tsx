@@ -62,13 +62,10 @@ export default function About() {
 
         {/* Our Team section */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-4">Our Team</h2>
+          <h2 className="text-2xl font-bold mb-4">開發過程</h2>
           <div className="prose max-w-none">
             <p className="mb-4">
-            我的專案是由許多富有創造力的成員一起協作而成，包含ChatGPT、plexity、v0.dev等。
-            </p>
-            <p className="mb-4">
-            如此頁面，就是由v0.dev產出大綱，再由我進行個人化的修改。
+            我的我的網站是使用 AI 工具製作的，主要用了 v0.dev、Cursor 和 ChatGPT 等工具。我先用 v0.dev 快速生成網站的骨架，再透過 Cursor 來補足功能和細節。
             </p>
           </div>
         </div>
